@@ -1,5 +1,6 @@
 const faker = require('faker');
 
+// 👤 Usuarios
 const users = Array.from({ length: 2 }, (_, i) => ({
   id: i + 1,
   name: faker.name.findName(),
@@ -9,6 +10,7 @@ const users = Array.from({ length: 2 }, (_, i) => ({
   avatar: faker.image.avatar(),
 }));
 
+// 🏷️ Categorías
 const categories = Array.from({ length: 2 }, (_, i) => ({
   id: i + 1,
   categoryName: faker.commerce.department(),
@@ -16,7 +18,7 @@ const categories = Array.from({ length: 2 }, (_, i) => ({
   active: faker.datatype.boolean(),
 }));
 
-
+// 🏭 Marcas
 const brands = Array.from({ length: 2 }, (_, i) => ({
   id: i + 1,
   brandName: faker.company.companyName(),
@@ -24,6 +26,7 @@ const brands = Array.from({ length: 2 }, (_, i) => ({
   active: faker.datatype.boolean(),
 }));
 
+// 💻 Productos
 const products = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   productName: faker.commerce.productName(),
@@ -35,4 +38,5 @@ const products = Array.from({ length: 10 }, (_, i) => ({
   active: faker.datatype.boolean(),
 }));
 
+// 📦 Exportar todo
 module.exports = { users, categories, brands, products };

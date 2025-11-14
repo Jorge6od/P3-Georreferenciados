@@ -1,65 +1,46 @@
-const faker = require('faker');
-const { users } = require('../db');
+const User = require('../models/user');
 
 class UserService {
-  getAll() {
-    return users;
+  async findAll() {
+    return await User.find();
   }
 
-  getById(id) {
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].id === Number(id)) return users[i];
-    }
-    return null;
+  async findById(id) {
+    return await User.findOne({ id });
   }
 
-  create(data) {
-    if (!data.name || !data.username || !data.email || !data.password) {
-      throw new Error('CamposObligatorios');
-    }
+  async create(data) {
+    // Buscar el último ID para generar el siguiente
+    const lastUser = await User.findOne().sort({ id: -1 });
+    const newId = lastUser ? lastUser.id + 1 : 1;
 
-    let newId = 1;
-    if (users.length > 0) {
-      newId = Math.max(...users.map(u => u.id)) + 1;
-    }
-
-    const newUser = {
+    const newUser = new User({
       id: newId,
       name: data.name,
-      username: data.username,
+      lastname: data.lastname,
       email: data.email,
-      password: data.password,
-      avatar: faker.image.avatar()
-    };
+      age: data.age,
+      active: data.active !== undefined ? data.active : true
+    });
 
-    users.push(newUser);
+    await newUser.save();
     return newUser;
   }
 
-  update(id, data) {
-    const user = this.getById(id);
+  async update(id, data) {
+    const user = await this.findById(id);
     if (!user) return null;
 
-    if (!data.name && !data.username && !data.email && !data.password) {
-      throw new Error('SinCampos');
-    }
-
-    if (data.name) user.name = data.name;
-    if (data.username) user.username = data.username;
-    if (data.email) user.email = data.email;
-    if (data.password) user.password = data.password;
-
+    Object.assign(user, data);
+    await user.save();
     return user;
   }
 
-  delete(id) {
-    for (let i = 0; i < users.length; i++) {
-      if (users[i].id === Number(id)) {
-        users.splice(i, 1);
-        return true;
-      }
-    }
-    return null;
+  async delete(id) {
+    const user = await this.findById(id);
+    if (!user) return null;
+    await user.deleteOne();
+    return true;
   }
 }
 

@@ -1,59 +1,46 @@
-const faker = require('faker');
-const { brands, products } = require('../db');
+const Brand = require('../models/brand');
+const Product = require('../models/product');
 
 class BrandService {
-  getAll() {
-    return brands;
+  async getAll() {
+    return await Brand.find();
   }
 
-  getById(id) {
-    for (let i = 0; i < brands.length; i++) {
-      if (brands[i].id === Number(id)) {
-        return brands[i];
-      }
-    }
-    return null;
+  async getById(id) {
+    return await Brand.findById(id);
   }
 
-  create(data) {
-    if (!data.brandName) {
-      throw new Error('NombreObligatorio');
-    }
+  async create(data) {
+    if (!data.brandName) throw new Error('NombreObligatorio');
 
-    const newBrand = {
-      id: brands.length + 1,
+    const brand = new Brand({
       brandName: data.brandName,
-      description: faker.company.catchPhrase(),
-      active: true
-    };
+      description: data.description || '',
+      active: data.active !== undefined ? data.active : true
+    });
 
-    brands.push(newBrand);
-    return newBrand;
+    await brand.save();
+    return brand;
   }
 
-  delete(id) {
-    const brandId = Number(id);
+  async update(id, data) {
+    const brand = await Brand.findById(id);
+    if (!brand) return null;
 
-    let hasProducts = false;
-    for (let i = 0; i < products.length; i++) {
-      if (products[i].brandId === brandId) {
-        hasProducts = true;
-        break;
-      }
-    }
+    if (data.brandName !== undefined) brand.brandName = data.brandName;
+    if (data.description !== undefined) brand.description = data.description;
+    if (data.active !== undefined) brand.active = data.active;
 
-    if (hasProducts) {
-      throw new Error('TieneProductos');
-    }
+    await brand.save();
+    return brand;
+  }
 
-    for (let i = 0; i < brands.length; i++) {
-      if (brands[i].id === brandId) {
-        brands.splice(i, 1);
-        return true;
-      }
-    }
+  async delete(id) {
+    const hasProducts = await Product.exists({ brandId: id });
+    if (hasProducts) throw new Error('TieneProductos');
 
-    return null;
+    const deleted = await Brand.findByIdAndDelete(id);
+    return deleted ? true : null;
   }
 }
 

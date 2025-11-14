@@ -4,55 +4,139 @@ const BrandService = require('../services/brandsService');
 
 const service = new BrandService();
 
-// GET /brands
-router.get('/', (req, res) => {
-  const allBrands = service.getAll();
-  res.json(allBrands);
+/**
+ * @swagger
+ * /brands:
+ *   get:
+ *     tags: [Brands]
+ *     summary: Obtener todas las marcas
+ *     responses:
+ *       200:
+ *         description: Lista de marcas
+ */
+router.get('/', async (req, res) => {
+  const brands = await service.getAll();
+  res.json(brands);
 });
 
-// GET /brands /id
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  const brand = service.getById(id);
-
-  if (!brand) {
-    return res.status(404).json({ message: 'Marca no encontrada' });
-  }
-
+/**
+ * @swagger
+ * /brands/{id}:
+ *   get:
+ *     tags: [Brands]
+ *     summary: Obtener una marca por ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Marca encontrada
+ *       404:
+ *         description: Marca no encontrada
+ */
+router.get('/:id', async (req, res) => {
+  const brand = await service.getById(req.params.id);
+  if (!brand) return res.status(404).json({ message: 'MarcaNoEncontrada' });
   res.json(brand);
 });
 
-// POST /brands
-router.post('/', (req, res) => {
+/**
+ * @swagger
+ * /brands:
+ *   post:
+ *     tags: [Brands]
+ *     summary: Crear una nueva marca
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               brandName:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               active:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Marca creada
+ */
+router.post('/', async (req, res) => {
   try {
-    const newBrand = service.create(req.body);
-    res.status(201).json(newBrand);
-  } catch (error) {
-    if (error.message === 'NombreObligatorio') {
-      return res.status(400).json({ message: 'El nombre de la marca es obligatorio' });
-    }
-    res.status(500).json({ message: 'Error al crear la marca' });
+    const brand = await service.create(req.body);
+    res.status(201).json(brand);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
-// DELETE /brands/ id
-router.delete('/:id', (req, res) => {
-  const { id } = req.params;
+/**
+ * @swagger
+ * /brands/{id}:
+ *   put:
+ *     tags: [Brands]
+ *     summary: Actualizar una marca
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               brandName:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               active:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Marca actualizada
+ *       404:
+ *         description: Marca no encontrada
+ */
+router.put('/:id', async (req, res) => {
+  const brand = await service.update(req.params.id, req.body);
+  if (!brand) return res.status(404).json({ message: 'MarcaNoEncontrada' });
+  res.json(brand);
+});
 
+/**
+ * @swagger
+ * /brands/{id}:
+ *   delete:
+ *     tags: [Brands]
+ *     summary: Eliminar una marca
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Marca eliminada
+ *       404:
+ *         description: Marca no encontrada
+ */
+router.delete('/:id', async (req, res) => {
   try {
-    const result = service.delete(id);
-
-    if (result === null) {
-      return res.status(404).json({ message: 'Marca no encontrada' });
-    }
-
-    res.json({ message: 'Marca eliminada correctamente' });
-  } catch (error) {
-    if (error.message === 'TieneProductos') {
-      return res.status(400).json({ message: 'No se puede borrar la marca porque pertenece a productos' });
-    }
-
-    res.status(500).json({ message: 'Error al eliminar la marca' });
+    const deleted = await service.delete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'MarcaNoEncontrada' });
+    res.json({ message: 'MarcaEliminada' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 

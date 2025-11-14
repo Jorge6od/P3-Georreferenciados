@@ -1,130 +1,74 @@
-const { products, categories, brands } = require('../db');
+const mongoose = require('mongoose');
+const Product = require('../models/product');
+const Category = require('../models/category');
+const Brand = require('../models/brand');
 
 class ProductService {
-  getAll() {
-    return products;
+  async getAll() {
+    return await Product.find();
   }
 
-  getById(id) {
-    for (let i = 0; i < products.length; i++) {
-      if (products[i].id === Number(id)) return products[i];
-    }
-    return null;
+  async getById(id) {
+    return await Product.findById(id);
   }
 
-  create(data) {
-    const { productName, price, stock, categoryId, brandId } = data;
+  async create(data) {
+    const { productName, price, stock, categoryId, brandId, image, active } = data;
 
-    let categoryExists = false;
-    for (let i = 0; i < categories.length; i++) {
-      if (categories[i].id === Number(categoryId)) {
-        categoryExists = true;
-        break;
-      }
-    }
-    if (!categoryExists) throw new Error('Categoria');
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) throw new Error('CategoriaNoValida');
+    if (!mongoose.Types.ObjectId.isValid(brandId)) throw new Error('BrandNoValida');
 
-    let brandExists = false;
-    for (let i = 0; i < brands.length; i++) {
-      if (brands[i].id === Number(brandId)) {
-        brandExists = true;
-        break;
-      }
-    }
-    if (!brandExists) throw new Error('Marca');
+    const categoryExists = await Category.findById(categoryId);
+    if (!categoryExists) throw new Error('CategoriaNoExiste');
 
-    const newProduct = {
-      id: products.length + 1,
+    const brandExists = await Brand.findById(brandId);
+    if (!brandExists) throw new Error('BrandNoExiste');
+
+    const product = new Product({
       productName,
       price,
       stock,
-      categoryId: Number(categoryId),
-      brandId: Number(brandId),
-      active: true
-    };
+      categoryId,
+      brandId,
+      image,
+      active
+    });
 
-    products.push(newProduct);
-    return newProduct;
-  }
-
-  update(id, data) {
-    const product = this.getById(id);
-    if (!product) return null;
-
-    const { productName, price, stock, categoryId, brandId } = data;
-
-    // Verificar ctegoria
-    let categoryExists = false;
-    for (let i = 0; i < categories.length; i++) {
-      if (categories[i].id === Number(categoryId)) {
-        categoryExists = true;
-        break;
-      }
-    }
-    if (!categoryExists) throw new Error('Categoria');
-
-    // Verificar marca
-    let brandExists = false;
-    for (let i = 0; i < brands.length; i++) {
-      if (brands[i].id === Number(brandId)) {
-        brandExists = true;
-        break;
-      }
-    }
-    if (!brandExists) throw new Error('Marca');
-
-    product.productName = productName;
-    product.price = price;
-    product.stock = stock;
-    product.categoryId = Number(categoryId);
-    product.brandId = Number(brandId);
-
+    await product.save();
     return product;
   }
 
-  patch(id, data) {
-    const product = this.getById(id);
+  async update(id, data) {
+    const product = await Product.findById(id);
     if (!product) return null;
 
     if (data.categoryId) {
-      let categoryExists = false;
-      for (let i = 0; i < categories.length; i++) {
-        if (categories[i].id === Number(data.categoryId)) {
-          categoryExists = true;
-          break;
-        }
-      }
-      if (!categoryExists) throw new Error('Categoria');
-      product.categoryId = Number(data.categoryId);
+      if (!mongoose.Types.ObjectId.isValid(data.categoryId)) throw new Error('CategoriaNoValida');
+      const categoryExists = await Category.findById(data.categoryId);
+      if (!categoryExists) throw new Error('CategoriaNoExiste');
+      product.categoryId = data.categoryId;
     }
 
     if (data.brandId) {
-      let brandExists = false;
-      for (let i = 0; i < brands.length; i++) {
-        if (brands[i].id === Number(data.brandId)) {
-          brandExists = true;
-          break;
-        }
-      }
-      if (!brandExists) throw new Error('Marca');
-      product.brandId = Number(data.brandId);
+      if (!mongoose.Types.ObjectId.isValid(data.brandId)) throw new Error('BrandNoValida');
+      const brandExists = await Brand.findById(data.brandId);
+      if (!brandExists) throw new Error('BrandNoExiste');
+      product.brandId = data.brandId;
     }
 
-    if (data.productName) product.productName = data.productName;
-    if (data.price) product.price = data.price;
-    if (data.stock) product.stock = data.stock;
+    if (data.productName !== undefined) product.productName = data.productName;
+    if (data.price !== undefined) product.price = data.price;
+    if (data.stock !== undefined) product.stock = data.stock;
+    if (data.image !== undefined) product.image = data.image;
+    if (data.active !== undefined) product.active = data.active;
 
+    await product.save();
     return product;
   }
 
-  delete(id) {
-    for (let i = 0; i < products.length; i++) {
-      if (products[i].id === Number(id)) {
-        products.splice(i, 1);
-        return true;
-      }
-    }
-    return null;
+  async delete(id) {
+    const deleted = await Product.findByIdAndDelete(id);
+    return deleted ? true : null;
   }
 }
 
